@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meeting Minutes AI Assistant</title>
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.0/dist/ffmpeg.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .recording-pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-3xl mx-auto">
+            <header class="text-center mb-12">
+                <h1 class="text-3xl font-bold text-gray-800 mb-4">Meeting Minutes AI Assistant</h1>
+                <p class="text-gray-600">Record your meetings and get AI-generated minutes automatically</p>
+            </header>
+
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <div class="flex flex-col items-center mb-6" id="recordingSection">
+                    <div class="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-4 cursor-pointer hover:bg-red-200 transition-colors" id="recordButton">
+                        <i class="bi bi-mic-fill text-4xl text-red-500"></i>
+                    </div>
+                    <p class="text-gray-700 mb-2" id="recordingStatus">Click to start recording</p>
+                    <span class="text-sm text-gray-500" id="timer">00:00</span>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="hidden" id="transcriptionSection">
+                        <h3 class="text-lg font-semibold mb-2">Live Transcription</h3>
+                        <div class="bg-gray-50 rounded p-4 h-40 overflow-y-auto" id="liveTranscript">
+                            <p class="text-gray-600 italic">Transcription will appear here...</p>
+                        </div>
+                    </div>
+
+                    <div class="hidden" id="momSection">
+                        <h3 class="text-lg font-semibold mb-2">Generated Minutes of Meeting</h3>
+                        <div class="bg-gray-50 rounded p-4">
+                            <div id="momContent" class="space-y-4">
+                                <!-- MOM content will be generated here -->
+                            </div>
+                        </div>
+                        <button id="downloadMOM" class="mt-4 bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors">
+                            Download MOM
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isRecording = false;
+        let startTime;
+        let timerInterval;
+        
+        const recordButton = document.getElementById('recordButton');
+        const recordingStatus = document.getElementById('recordingStatus');
+        const timer = document.getElementById('timer');
+        const transcriptionSection = document.getElementById('transcriptionSection');
+        const momSection = document.getElementById('momSection');
+        
+        recordButton.addEventListener('click', toggleRecording);
+
+        function toggleRecording() {
+            isRecording = !isRecording;
+            
+            if (isRecording) {
+                startRecording();
+            } else {
+                stopRecording();
+            }
+        }
+
+        function startRecording() {
+            recordButton.querySelector('i').classList.add('recording-pulse');
+            recordingStatus.textContent = 'Recording in progress...';
+            recordButton.classList.remove('bg-red-100');
+            recordButton.classList.add('bg-red-500');
+            recordButton.querySelector('i').classList.remove('text-red-500');
+            recordButton.querySelector('i').classList.add('text-white');
+            
+            startTime = Date.now();
+            updateTimer();
+            timerInterval = setInterval(updateTimer, 1000);
+            
+            transcriptionSection.classList.remove('hidden');
+            simulateTranscription();
+        }
+
+        function stopRecording() {
+            recordButton.querySelector('i').classList.remove('recording-pulse');
+            recordingStatus.textContent = 'Recording stopped';
+            recordButton.classList.remove('bg-red-500');
+            recordButton.classList.add('bg-red-100');
+            recordButton.querySelector('i').classList.remove('text-white');
+            recordButton.querySelector('i').classList.add('text-red-500');
+            
+            clearInterval(timerInterval);
+            
+            setTimeout(generateMOM, 2000);
+        }
+
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const seconds = (elapsed % 60).toString().padStart(2, '0');
+            timer.textContent = `${minutes}:${seconds}`;
+        }
+
+        function simulateTranscription() {
+            const liveTranscript = document.getElementById('liveTranscript');
+            const demoText = "Team meeting discussion about the new project timeline...";
+            let index = 0;
+
+            const transcriptInterval = setInterval(() => {
+                if (!isRecording) {
+                    clearInterval(transcriptInterval);
+                    return;
+                }
+                if (index < demoText.length) {
+                    liveTranscript.innerHTML = demoText.substring(0, index + 1);
+                    index++;
+                }
+            }, 50);
+        }
+
+        function generateMOM() {
+            momSection.classList.remove('hidden');
+            const momContent = document.getElementById('momContent');
+            
+            const mom = `
+                <h4 class="font-semibold">Meeting Details:</h4>
+                <p>Date: ${new Date().toLocaleDateString()}</p>
+                <p>Duration: ${timer.textContent}</p>
+                
+                <h4 class="font-semibold mt-4">Attendees:</h4>
+                <p>Team Members (automatically detected)</p>
+                
+                <h4 class="font-semibold mt-4">Key Discussion Points:</h4>
+                <ul class="list-disc list-inside">
+                    <li>Project timeline review</li>
+                    <li>Resource allocation discussion</li>
+                    <li>Next steps and action items</li>
+                </ul>
+            `;
+            
+            momContent.innerHTML = mom;
+        }
+
+        document.getElementById('downloadMOM').addEventListener('click', () => {
+            const momText = document.getElementById('momContent').innerText;
+            const blob = new Blob([momText], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `MOM_${new Date().toISOString().split('T')[0]}.txt`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        });
+    </script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
